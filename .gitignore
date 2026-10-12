@@ -1,0 +1,27 @@
+# Maven build output
+/target/
+*.log
+*.tmp
+*.class
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node modules (if any)
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Misc
+*.swp
+*.swo
+

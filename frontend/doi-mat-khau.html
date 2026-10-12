@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đổi mật khẩu - Quản Lý Bán Hàng</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-icon">🏪</span>
+      <h2>Quản Lý Bán Hàng</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index.html">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="kho.html">
+        <span class="nav-icon">📦</span>
+        <span>Kho & Sản phẩm</span>
+      </a>
+      <a href="don-hang.html">
+        <span class="nav-icon">🧾</span>
+        <span>Đơn hàng</span>
+      </a>
+      <a href="khach-hang.html">
+        <span class="nav-icon">👥</span>
+        <span>Khách hàng</span>
+      </a>
+      <a href="doi-mat-khau.html" class="active">
+        <span class="nav-icon">🔑</span>
+        <span>Đổi mật khẩu</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a onclick="logout()">
+        <span class="nav-icon">🚪</span>
+        <span>Đăng xuất</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== NỘI DUNG CHÍNH ===== -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1>🔑 Đổi mật khẩu</h1>
+    </div>
+
+    <!-- Form đổi mật khẩu -->
+    <div class="card password-form-card">
+      <form id="changePasswordForm" onsubmit="handleChangePassword(event)">
+        <!-- Mật khẩu cũ -->
+        <div class="form-group">
+          <label for="oldPassword">🔒 Mật khẩu hiện tại</label>
+          <input
+            type="password"
+            id="oldPassword"
+            placeholder="Nhập mật khẩu hiện tại"
+            required
+            autocomplete="current-password"
+          >
+        </div>
+
+        <!-- Mật khẩu mới -->
+        <div class="form-group">
+          <label for="newPassword">🔐 Mật khẩu mới</label>
+          <input
+            type="password"
+            id="newPassword"
+            placeholder="Nhập mật khẩu mới (ít nhất 6 ký tự)"
+            required
+            minlength="6"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <!-- Xác nhận mật khẩu mới -->
+        <div class="form-group">
+          <label for="confirmPassword">🔐 Xác nhận mật khẩu mới</label>
+          <input
+            type="password"
+            id="confirmPassword"
+            placeholder="Nhập lại mật khẩu mới"
+            required
+            minlength="6"
+            autocomplete="new-password"
+          >
+        </div>
+
+        <!-- Nút đổi mật khẩu -->
+        <button type="submit" class="btn btn-primary btn-lg" id="btnChangePass" style="width: 100%;">
+          🔄 Đổi mật khẩu
+        </button>
+      </form>
+    </div>
+  </main>
+
+  <!-- Kịch bản JavaScript -->
+  <script src="js/api.js"></script>
+  <script>
+    // Kiểm tra xác thực
+    checkAuth();
+
+    /**
+     * Xử lý đổi mật khẩu
+     */
+    async function handleChangePassword(e) {
+      e.preventDefault();
+
+      const oldPassword = document.getElementById('oldPassword').value;
+      const newPassword = document.getElementById('newPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const btn = document.getElementById('btnChangePass');
+
+      // Kiểm tra mật khẩu mới khớp nhau
+      if (newPassword !== confirmPassword) {
+        showToast('Mật khẩu mới và xác nhận không khớp!', 'error');
+        return;
+      }
+
+      // Kiểm tra độ dài mật khẩu
+      if (newPassword.length < 6) {
+        showToast('Mật khẩu mới phải có ít nhất 6 ký tự!', 'warning');
+        return;
+      }
+
+      // Hiển thị trạng thái đang xử lý
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+
+      try {
+        const result = await apiPost('/auth/change-password', {
+          oldPassword,
+          newPassword,
+        });
+
+        if (result && (result.success !== false)) {
+          showToast('Đổi mật khẩu thành công!');
+          document.getElementById('changePasswordForm').reset();
+        } else {
+          showToast(result?.message || 'Đổi mật khẩu thất bại!', 'error');
+        }
+      } catch (error) {
+        showToast('Có lỗi xảy ra. Vui lòng thử lại!', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '🔄 Đổi mật khẩu';
+      }
+    }
+  </script>
+</body>
+</html>

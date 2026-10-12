@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tổng Quan - Quản Lý Bán Hàng</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===== SIDEBAR (Thanh điều hướng bên trái) ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-icon">🏪</span>
+      <h2>Quản Lý Bán Hàng</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index.html" class="active">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="kho.html">
+        <span class="nav-icon">📦</span>
+        <span>Kho & Sản phẩm</span>
+      </a>
+      <a href="don-hang.html">
+        <span class="nav-icon">🧾</span>
+        <span>Đơn hàng</span>
+      </a>
+      <a href="khach-hang.html">
+        <span class="nav-icon">👥</span>
+        <span>Khách hàng</span>
+      </a>
+      <a href="doi-mat-khau.html">
+        <span class="nav-icon">🔑</span>
+        <span>Đổi mật khẩu</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a onclick="logout()">
+        <span class="nav-icon">🚪</span>
+        <span>Đăng xuất</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== NỘI DUNG CHÍNH ===== -->
+  <main class="main-content">
+    <!-- Tiêu đề trang -->
+    <div class="page-header">
+      <h1>📊 Tổng Quan</h1>
+    </div>
+
+    <!-- Các thẻ thống kê -->
+    <div class="stats-grid" id="statsGrid">
+      <!-- Doanh thu hôm nay -->
+      <div class="stat-card">
+        <div class="stat-icon blue">💰</div>
+        <div class="stat-info">
+          <div class="stat-value" id="statRevenue">--</div>
+          <div class="stat-label">Doanh thu hôm nay</div>
+        </div>
+      </div>
+
+      <!-- Tổng đơn hàng -->
+      <div class="stat-card">
+        <div class="stat-icon green">🧾</div>
+        <div class="stat-info">
+          <div class="stat-value" id="statOrders">--</div>
+          <div class="stat-label">Tổng đơn hàng</div>
+        </div>
+      </div>
+
+      <!-- Tổng khách hàng -->
+      <div class="stat-card">
+        <div class="stat-icon orange">👥</div>
+        <div class="stat-info">
+          <div class="stat-value" id="statCustomers">--</div>
+          <div class="stat-label">Tổng khách hàng</div>
+        </div>
+      </div>
+
+      <!-- Sản phẩm sắp hết -->
+      <div class="stat-card">
+        <div class="stat-icon red">⚠️</div>
+        <div class="stat-info">
+          <div class="stat-value" id="statLowStock">--</div>
+          <div class="stat-label">SP sắp hết hàng</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bảng sản phẩm sắp hết hàng -->
+    <div class="card">
+      <div class="card-header">
+        <h3>⚠️ Sản phẩm sắp hết hàng</h3>
+      </div>
+      <div class="table-container" style="box-shadow: none; border: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Tên sản phẩm</th>
+              <th>Số lượng tồn</th>
+              <th>Danh mục</th>
+            </tr>
+          </thead>
+          <tbody id="lowStockTable">
+            <tr>
+              <td colspan="3" class="text-center text-muted" style="padding: 32px;">
+                Đang tải dữ liệu...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Kịch bản JavaScript -->
+  <script src="js/api.js"></script>
+  <script>
+    // Kiểm tra xác thực khi tải trang
+    checkAuth();
+
+    // Tải dữ liệu dashboard khi trang sẵn sàng
+    document.addEventListener('DOMContentLoaded', loadDashboard);
+
+    /**
+     * Tải và hiển thị dữ liệu tổng quan
+     */
+    async function loadDashboard() {
+      const data = await apiGet('/dashboard/stats');
+
+      if (!data) return;
+
+      // Cập nhật các thẻ thống kê
+      // Hỗ trợ cả 2 dạng: data trả trực tiếp hoặc data.data
+      const stats = data.data || data;
+
+      document.getElementById('statRevenue').textContent = formatMoney(stats.doanhThuNgay || 0);
+      document.getElementById('statOrders').textContent = (stats.tongDonHang || 0).toLocaleString('vi-VN');
+      document.getElementById('statCustomers').textContent = (stats.tongKhachHang || 0).toLocaleString('vi-VN');
+
+      // Hiển thị bảng sản phẩm sắp hết
+      const lowStockItems = stats.sanPhamSapHet || [];
+      document.getElementById('statLowStock').textContent = lowStockItems.length;
+
+      renderLowStockTable(lowStockItems);
+    }
+
+    /**
+     * Hiển thị bảng sản phẩm sắp hết hàng
+     * @param {Array} items - Danh sách sản phẩm sắp hết
+     */
+    function renderLowStockTable(items) {
+      const tbody = document.getElementById('lowStockTable');
+
+      if (!items || items.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="3">
+              <div class="empty-state">
+                <span class="empty-icon">✅</span>
+                <p>Không có sản phẩm nào sắp hết hàng</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => `
+        <tr>
+          <td><strong>${item.tenSanPham || ''}</strong></td>
+          <td>
+            <span class="badge badge-danger">${item.soLuongTon || 0}</span>
+          </td>
+          <td>${item.danhMuc || '--'}</td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

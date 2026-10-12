@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khách hàng - Quản Lý Bán Hàng</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="logo-icon">🏪</span>
+      <h2>Quản Lý Bán Hàng</h2>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index.html">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="kho.html">
+        <span class="nav-icon">📦</span>
+        <span>Kho & Sản phẩm</span>
+      </a>
+      <a href="don-hang.html">
+        <span class="nav-icon">🧾</span>
+        <span>Đơn hàng</span>
+      </a>
+      <a href="khach-hang.html" class="active">
+        <span class="nav-icon">👥</span>
+        <span>Khách hàng</span>
+      </a>
+      <a href="doi-mat-khau.html">
+        <span class="nav-icon">🔑</span>
+        <span>Đổi mật khẩu</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a onclick="logout()">
+        <span class="nav-icon">🚪</span>
+        <span>Đăng xuất</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ===== NỘI DUNG CHÍNH ===== -->
+  <main class="main-content">
+    <div class="page-header">
+      <h1>👥 Khách hàng</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="openAddCustomer()">
+          ➕ Thêm khách hàng
+        </button>
+      </div>
+    </div>
+
+    <!-- Bảng danh sách khách hàng -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Họ tên</th>
+            <th>Số điện thoại</th>
+            <th>Email</th>
+            <th>Địa chỉ</th>
+            <th>Thao tác</th>
+          </tr>
+        </thead>
+        <tbody id="customerTable">
+          <tr>
+            <td colspan="5" class="text-center text-muted" style="padding: 32px;">
+              Đang tải dữ liệu...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- ===== MODAL THÊM/SỬA KHÁCH HÀNG ===== -->
+  <div class="modal-overlay" id="customerModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="customerModalTitle">Thêm khách hàng mới</h3>
+        <button class="modal-close" onclick="closeModal('customerModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="customerForm" onsubmit="handleSaveCustomer(event)">
+          <!-- Ẩn ID khi sửa -->
+          <input type="hidden" id="customerId">
+
+          <div class="form-group">
+            <label for="hoTen">Họ và tên</label>
+            <input type="text" id="hoTen" placeholder="Nhập họ và tên" required>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="soDienThoai">Số điện thoại</label>
+              <input type="tel" id="soDienThoai" placeholder="VD: 0912345678">
+            </div>
+            <div class="form-group">
+              <label for="emailKH">Email</label>
+              <input type="email" id="emailKH" placeholder="VD: email@example.com">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="diaChi">Địa chỉ</label>
+            <textarea id="diaChi" placeholder="Nhập địa chỉ khách hàng"></textarea>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('customerModal')">Hủy</button>
+        <button class="btn btn-primary" onclick="document.getElementById('customerForm').requestSubmit()">
+          💾 Lưu khách hàng
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kịch bản JavaScript -->
+  <script src="js/api.js"></script>
+  <script>
+    // Kiểm tra xác thực
+    checkAuth();
+
+    // Danh sách khách hàng
+    let customers = [];
+
+    // Tải dữ liệu khi trang sẵn sàng
+    document.addEventListener('DOMContentLoaded', loadCustomers);
+
+    /**
+     * Tải danh sách khách hàng từ API
+     */
+    async function loadCustomers() {
+      const data = await apiGet('/khach-hang');
+      if (!data) return;
+
+      customers = data.data || data || [];
+      if (Array.isArray(data)) customers = data;
+
+      renderCustomerTable();
+    }
+
+    /**
+     * Hiển thị bảng khách hàng
+     */
+    function renderCustomerTable() {
+      const tbody = document.getElementById('customerTable');
+
+      if (!customers || customers.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <span class="empty-icon">👥</span>
+                <p>Chưa có khách hàng nào. Hãy thêm khách hàng mới!</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = customers.map(c => `
+        <tr>
+          <td><strong>${c.hoTen || ''}</strong></td>
+          <td>${c.soDienThoai || '--'}</td>
+          <td>${c.email || '--'}</td>
+          <td>${c.diaChi || '--'}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn btn-primary btn-sm" onclick="openEditCustomer('${c.id}')">✏️ Sửa</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    /**
+     * Mở modal thêm khách hàng mới
+     */
+    function openAddCustomer() {
+      document.getElementById('customerForm').reset();
+      document.getElementById('customerId').value = '';
+      document.getElementById('customerModalTitle').textContent = 'Thêm khách hàng mới';
+      openModal('customerModal');
+    }
+
+    /**
+     * Mở modal sửa khách hàng
+     * @param {string} id - ID khách hàng
+     */
+    function openEditCustomer(id) {
+      const customer = customers.find(c => c.id == id);
+      if (!customer) return;
+
+      // Điền dữ liệu vào form
+      document.getElementById('customerId').value = customer.id;
+      document.getElementById('hoTen').value = customer.hoTen || '';
+      document.getElementById('soDienThoai').value = customer.soDienThoai || '';
+      document.getElementById('emailKH').value = customer.email || '';
+      document.getElementById('diaChi').value = customer.diaChi || '';
+
+      document.getElementById('customerModalTitle').textContent = 'Sửa thông tin khách hàng';
+      openModal('customerModal');
+    }
+
+    /**
+     * Xử lý lưu khách hàng (thêm mới hoặc cập nhật)
+     */
+    async function handleSaveCustomer(e) {
+      e.preventDefault();
+
+      const id = document.getElementById('customerId').value;
+      const body = {
+        hoTen: document.getElementById('hoTen').value.trim(),
+        soDienThoai: document.getElementById('soDienThoai').value.trim(),
+        email: document.getElementById('emailKH').value.trim(),
+        diaChi: document.getElementById('diaChi').value.trim(),
+      };
+
+      let result;
+      if (id) {
+        // Cập nhật khách hàng
+        result = await apiPut('/khach-hang/' + id, body);
+      } else {
+        // Thêm mới khách hàng
+        result = await apiPost('/khach-hang', body);
+      }
+
+      if (result) {
+        showToast(id ? 'Cập nhật khách hàng thành công!' : 'Thêm khách hàng thành công!');
+        closeModal('customerModal');
+        loadCustomers();
+      }
+    }
+  </script>
+</body>
+</html>
